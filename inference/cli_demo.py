@@ -66,7 +66,7 @@ async def vllm_gen(engine, tokenizer, lora_path, enable_lora, messages, top_p, t
 def generic_chat(tokenizer, model, temperature, top_p, max_length, backend="transformers"):
     history = []
     backend_label = "OpenVINO" if backend == "ov" else "Transformers"
-    print(f"Welcome to the GLM-Edge-Edge CLI chat ({backend_label}). Type your messages below.")
+    print(f"Welcome to the GLM-Edge CLI chat ({backend_label}). Type your messages below.")
     while True:
         user_input = input("\nYou: ")
         if user_input.lower() in ["exit", "quit"]:
@@ -77,7 +77,6 @@ def generic_chat(tokenizer, model, temperature, top_p, max_length, backend="tran
         model_inputs = tokenizer.apply_chat_template(
             messages, add_generation_prompt=True, tokenize=True, return_dict=True, return_tensors="pt"
         )
-        model_inputs = {k: v.to("cpu") for k, v in model_inputs.items()}  # Ensure CPU for OpenVINO
 
         streamer = TextIteratorStreamer(tokenizer=tokenizer, timeout=60, skip_prompt=True, skip_special_tokens=True)
         generate_kwargs = {
@@ -165,6 +164,7 @@ def main():
         else:
             model = AutoModelForCausalLM.from_pretrained(
                 args.model_path,
+                attn_implementation="flash_attention_2",
                 torch_dtype=torch.bfloat16 if args.precision == "bfloat16" else torch.float16,
                 trust_remote_code=True,
                 device_map="auto",
