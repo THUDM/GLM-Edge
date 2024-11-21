@@ -4,14 +4,6 @@ Read this in [Chinese](README.md)
 
 In this demo, you will experience how to fine-tune the GLM-Edge-4B-Chat open source dialogue model. Please strictly follow the steps in the document to avoid unnecessary errors.
 
-## Environment Configuration
-
-Before you start fine-tuning, make sure you have cloned the latest version of the model repository. You also need to install the dependencies in this directory:
-
-```bash
-pip install -r requirements.txt
-```
-
 ## Multi-turn dialogue format
 
 The multi-turn dialogue fine-tuning example uses the GLM-Edge dialogue format convention, adding different `loss_mask` to different roles to calculate `loss` for multiple rounds of replies in one calculation.

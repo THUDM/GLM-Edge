@@ -2,15 +2,7 @@
 
 Read this in [English](README_en.md)
 
-本 demo 中，你将体验到如何微调 GLM-Edge-4B-Chat 对话开源模型。 请严格按照文档的步骤进行操作，以避免不必要的错误。
-
-## 环境配置
-
-在开始微调之前，请保证克隆了最新版本的模型仓库，同时您需要安装本目录下的依赖项：
-
-```bash
-pip install -r requirements.txt
-```
+本 demo 中，你将体验到如何微调 GLM-Edge 对话开源模型。 请严格按照文档的步骤进行操作，以避免不必要的错误。
 
 ## 多轮对话格式
 
