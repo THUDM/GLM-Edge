@@ -2,6 +2,8 @@ import argparse
 import time
 import asyncio
 from threading import Thread
+
+from peft import PeftModelForCausalLM
 from transformers import (
     AutoTokenizer,
     AutoModelForCausalLM,
@@ -47,15 +49,15 @@ async def vllm_gen(engine, tokenizer, lora_path, enable_lora, messages, top_p, t
     )
     if enable_lora:
         async for output in engine.generate(
-            inputs=inputs,
-            sampling_params=sampling_params,
-            request_id=f"{time.time()}",
-            lora_request=LoRARequest("GLM-Edge-lora", 1, lora_path=lora_path),
+                inputs=inputs,
+                sampling_params=sampling_params,
+                request_id=f"{time.time()}",
+                lora_request=LoRARequest("GLM-Edge-lora", 1, lora_path=lora_path),
         ):
             yield output.outputs[0].text
     else:
         async for output in engine.generate(
-            inputs=inputs, sampling_params=sampling_params, request_id=f"{time.time()}"
+                inputs=inputs, sampling_params=sampling_params, request_id=f"{time.time()}"
         ):
             yield output.outputs[0].text
 
@@ -115,7 +117,7 @@ async def vllm_chat(engine, tokenizer, lora_path, enable_lora, temperature, top_
         current_length = 0
         output = ""
         async for output in vllm_gen(
-            engine, tokenizer, lora_path, enable_lora, messages, top_p, temperature, max_length
+                engine, tokenizer, lora_path, enable_lora, messages, top_p, temperature, max_length
         ):
             print(output[current_length:], end="", flush=True)
             current_length = len(output)
@@ -167,6 +169,13 @@ def main():
                 trust_remote_code=True,
                 device_map="auto",
             ).eval()
+
+        if args.lora_path:
+            model = PeftModelForCausalLM.from_pretrained(
+                model=model,
+                model_id=args.lora_path,
+                trust_remote_code=True,
+            )
         generic_chat(tokenizer, model, args.temperature, args.top_p, args.max_length, backend="transformers")
 
 
