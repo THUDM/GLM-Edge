@@ -5,9 +5,8 @@ data_config:
   num_proc: 1
 
 combine: True
-freezeV: True
-max_input_length: 512
-max_output_length: 512
+max_input_length: 256
+max_output_length: 128
 
 training_args:
   # see `transformers.Seq2SeqTrainingArguments`
@@ -16,7 +15,7 @@ training_args:
   # needed to be fit for the dataset
   learning_rate: 5e-5
   # settings for data loading
-  per_device_train_batch_size: 1
+  per_device_train_batch_size: 4
   dataloader_num_workers: 16
   remove_unused_columns: false
   # settings for saving checkpoints
@@ -29,13 +28,11 @@ training_args:
   # settings for evaluation
   per_device_eval_batch_size: 16
   eval_strategy: steps
-  eval_steps: 500
+  eval_steps: 1000
   # settings for optimizer
-  # adam_epsilon: 1e-6
-  # uncomment the following line to detect nan or inf values
-  # debug: underflow_overflow
+  adam_epsilon: 1e-6
   predict_with_generate: true
   generation_config:
     max_new_tokens: 512
   # set your absolute deepspeed path here
-  deepspeed: configs/ds_zero_3.json
+  deepspeed: /share/home/zyx/Code/GLM-Edge/finetune/configs/ds_zero_3.json
