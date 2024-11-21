@@ -1,6 +1,7 @@
-torch>=2.5.0
+# Install transformers for source:
+git+https://github.com/huggingface/transformers.git
+torch>=2.5.1
 torchvision>=0.20.0
-transformers>=4.46.2
 huggingface-hub>=0.25.1
 sentencepiece>=0.2.0
 jinja2>=3.1.4

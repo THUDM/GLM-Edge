@@ -26,12 +26,17 @@ pip install -r requirements.txt
 
 ### Transformers / vLLM Demo
 
-我们提供了 vLLM 和 transformers 两种后端推理方式,你可以通过运行以下命令来运行模型。这是一个命令行交互代码。
+我们提供了 vLLM, OpenVINO 和 transformers 三种后端推理方式,你可以通过运行以下命令来运行模型。这是一个命令行交互代码。
 
 ```shell
 python cli_demo.py --backend transformers --model_path THUDM/glm-edge-1.5b-chat --precision bfloat16
-python cli_demo.py --backend vllm --model_path THUDM/glm-edge-1.5b-chat --precision int4 # For Int4 Inference
+python cli_demo.py --backend vllm --model_path THUDM/glm-edge-1.5b-chat --precision bfloat16
+python cli_demo.py --backend ov --model_path THUDM/glm-edge-1.5b-chat-ov  --precision int4
 ```
+
+> 注意：
+> OpenVINO 版本模型需要运行 convert_model_ov.py 来转换得到。
+> vLLM 版本模型需要源代码安装 vLLM以正常运行
 
 你也可以使用 Gradio 启动 WebUI。
 
