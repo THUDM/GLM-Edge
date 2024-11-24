@@ -18,6 +18,10 @@ pillow>=10.4.0
 sse-starlette>=2.1.3
 bitsandbytes>=0.43.2 # INT4 Loading
 
-# optimum-intel>=1.20.1 # For Intel OpenVINNO convert
+# For Intel OpenVINNO convert
+# optimum-intel>=1.20.1
+# openvino>=1.26.4
+# nncf>=2.14.0
+
 # vllm>=0.6.4.post1 # using with VLLM Framework
 # peft>=0.14.0 # Using with finetune model

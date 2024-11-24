@@ -20,10 +20,13 @@ def parse_args():
     parser.add_argument("--server_name", type=str, default="127.0.0.1", help="Server name")
     parser.add_argument("--server_port", type=int, default=7860, help="Server port")
     parser.add_argument("--lora_path", type=str, default=None, help="Path to LoRA model if available")
-    parser.add_argument("--precision", type=str, choices=["float16", "bfloat16", "int4"],
-                        default="bfloat16",
-                        help="Precision for model"
-                        )
+    parser.add_argument(
+        "--precision",
+        type=str,
+        choices=["float16", "bfloat16", "int4"],
+        default="bfloat16",
+        help="Precision for model",
+    )
     return parser.parse_args()
 
 
@@ -51,7 +54,9 @@ def load_model_and_tokenizer(model_dir: Union[str, Path], precision: str, trust_
     else:
         model = AutoModelForCausalLM.from_pretrained(model_dir, trust_remote_code=trust_remote_code, device_map="auto")
 
-    tokenizer_dir = model.peft_config["default"].base_model_name_or_path if hasattr(model, 'peft_config') else model_dir
+    tokenizer_dir = (
+        model.peft_config["default"].base_model_name_or_path if hasattr(model, "peft_config") else model_dir
+    )
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_dir, trust_remote_code=trust_remote_code, use_fast=False)
     return model, tokenizer
 
