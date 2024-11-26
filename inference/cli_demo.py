@@ -63,7 +63,7 @@ async def vllm_gen(engine, tokenizer, lora_path, enable_lora, messages, top_p, t
 def generic_chat(tokenizer, model, temperature, top_p, max_length, backend="transformers"):
     history = []
     backend_label = "OpenVINO" if backend == "ov" else "Transformers"
-    print(f"Welcome to the GLM-Edge-Edge CLI chat ({backend_label}). Type your messages below.")
+    print(f"Welcome to the GLM-Edge CLI chat ({backend_label}). Type your messages below.")
     while True:
         user_input = input("\nYou: ")
         if user_input.lower() in ["exit", "quit"]:
@@ -102,7 +102,7 @@ def generic_chat(tokenizer, model, temperature, top_p, max_length, backend="tran
 # Main Async Chat Function for VLLM
 async def vllm_chat(engine, tokenizer, lora_path, enable_lora, temperature, top_p, max_length):
     history = []
-    print("Welcome to the GLM-Edge-Edge DEMO chat (VLLM). Type your messages below.")
+    print("Welcome to the GLM-Edge DEMO chat (VLLM). Type your messages below.")
     while True:
         user_input = input("\nYou: ")
         if user_input.lower() in ["exit", "quit"]:
@@ -110,7 +110,7 @@ async def vllm_chat(engine, tokenizer, lora_path, enable_lora, temperature, top_
         history.append([user_input, ""])
 
         messages = [{"role": "user", "content": user_input}]
-        print("\nGLM: ", end="")
+        print("\nGLM-Edge: ", end="")
         current_length = 0
         output = ""
         async for output in vllm_gen(
