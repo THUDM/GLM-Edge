@@ -5,7 +5,6 @@ from threading import Thread
 from transformers import (
     AutoTokenizer,
     AutoModelForCausalLM,
-    PreTrainedTokenizer,
     TextIteratorStreamer,
     BitsAndBytesConfig,
 )
@@ -18,7 +17,7 @@ import torch
 # Load Model and Tokenizer for VLLM
 def load_vllm_model_and_tokenizer(model_dir: str, lora_path: str, precision: str):
     enable_lora = bool(lora_path)
-    tokenizer = PreTrainedTokenizer.from_pretrained(model_dir)
+    tokenizer = AutoTokenizer.from_pretrained(model_dir)
     engine_args = AsyncEngineArgs(
         model=model_dir,
         tokenizer=model_dir,
@@ -55,7 +54,7 @@ async def vllm_gen(engine, tokenizer, lora_path, enable_lora, messages, top_p, t
             yield output.outputs[0].text
     else:
         async for output in engine.generate(
-            inputs=inputs, sampling_params=sampling_params, request_id=f"{time.time()}"
+            prompt=inputs, sampling_params=sampling_params, request_id=f"{time.time()}"
         ):
             yield output.outputs[0].text
 
