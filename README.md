@@ -34,14 +34,21 @@ python cli_demo.py --backend ov --model_path THUDM/glm-edge-1.5b-chat-ov  --prec
 
 > 注意：
 >
-> OpenVINO 版本模型需要运行 convert_model_ov.py 来转换得到。
->
-> vLLM 版本模型需要从这里 源代码 安装 vLLM 以正常运行。
+> OpenVINO 版本模型需要进行转换，请前往 [这里](inference/ov_convert) 运行转换代码。
+> 
+> ```python convert_chat.py --model_path  THUDM/glm-edge-1.5b-chat --precision int4 ``` 转换对话模型。
+> 
+> ```python convert.py --model_path  THUDM/glm-edge-v-2b --precision int4``` 转换视觉理解模型。
+> 
+> 你也可以在 [这里](https://github.com/openvino-dev-samples/glm-edge.openvino) 查看原始的转换代码。
+> 
+> vLLM 版本模型需要从 [这里]() 源代码 安装 vLLM 以正常运行。
 
 如果你想使用 glm-edge-v 系列模型，你可以运行以下命令行交互代码
 
 ```shell
-python cli_demo_vision.py --model_path THUDM/glm-edge-v-2b --precision bfloat16
+python cli_demo_vision.py  --backend transformers --model_path THUDM/glm-edge-v-2b --precision bfloat16
+python cli_demo.py --backend ov --model_path THUDM/glm-edge-1.5b-chat-ov  --precision int4
 ```
 
 你也可以使用 Gradio 启动 WebUI。
@@ -51,9 +58,6 @@ python cli_demo.py --backend transformers --model_path THUDM/glm-edge-1.5b-chat 
 python cli_demo.py --backend vllm --model_path THUDM/glm-edge-1.5b-chat --precision int4 # For Int4 Inference
 ```
 
-> 注意：
->
-> 这里没有提供 OV 的 实现。
 
 ### XInference
 

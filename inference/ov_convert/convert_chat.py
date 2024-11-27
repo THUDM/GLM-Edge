@@ -5,13 +5,15 @@ from optimum.exporters.tasks import TasksManager
 import os
 import argparse
 
-TasksManager._SUPPORTED_MODEL_TYPE["glm"] = TasksManager._SUPPORTED_MODEL_TYPE["llama"]  # 使用 Llama 系算子转换。
+TasksManager._SUPPORTED_MODEL_TYPE["glm"] = TasksManager._SUPPORTED_MODEL_TYPE[
+    "llama"
+]  # Using with Llama Type in converting
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--model_path", default="THUDM/glm-edge-1.5b-chat", type=str, help="orignal model path")
     parser.add_argument(
-        "--precision", default="int4", type=str, choices=["bf16", "fp16", "int8", "int4"], help="fp16, int8 or int4"
+        "--precision", default="int4", type=str, choices=["fp16", "int8", "int4"], help="fp16, int8 or int4"
     )
     parser.add_argument("--output_path", default="glm-edge-1.5b-chat-ov", type=str, help="path to save the IR model")
     args = parser.parse_args()
