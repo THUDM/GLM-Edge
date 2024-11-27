@@ -8,9 +8,9 @@ In this demo, you will experience how to fine-tune the GLM-Edge-4B-Chat open sou
 
 The multi-turn dialogue fine-tuning example uses the GLM-Edge dialogue format convention, adding different `loss_mask` to different roles to calculate `loss` for multiple rounds of replies in one calculation.
 
-For data files, the sample uses the following format
+For data files, the sample uses the following format:
 
-If you only want to fine-tune the model's dialogue capabilities, not the tool capabilities, you should organize the data in the following format.
+For the glm-edge-chat family of models, you should organize your data in the following format.
 
 ```json
 [
@@ -59,6 +59,57 @@ Here is an example of a single-turn conversation:
 }
 ```
 
+For glm-edge-v family of models, you should organize your data in the following format.
+
+```json
+[
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "image",
+              "image": "path/to/image"
+            },
+            {
+              "type": "text",
+              "text": "图片中的狗在做什么？"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "type": "text",
+              "text": "zRzRzRzRzRzRzR!这只狗躺在公寓客厅的绿色沙发上。"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "这只狗是什么颜色的？"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "type": "text",
+              "text": "zRzRzRzRzRzRzR!这只狗是棕色和白色的。"
+            }
+          ]
+        }
+      ]
+    }
+]
+```
+
 ## Configuration Files
 
 The fine-tuning configuration files are located in the `config` directory and include the following files:
@@ -71,7 +122,7 @@ The fine-tuning configuration files are located in the `config` directory and in
 + val_file: File path of validation dataset.
 + test_file: File path of test dataset.
 + num_proc: Number of processes to use when loading data.
-+ max_input_length: Maximum length of input sequence.
++ max_input_length: Maximum length of input sequence, since the number of image placeholder token is 584, the value needs to be set larger.
 + max_output_length: Maximum length of output sequence.
 + training_args section
 + output_dir: Directory for saving model and other outputs.
@@ -105,12 +156,14 @@ the acceleration solution, and you need to install `deepspeed`.
 
 ```shell
 OMP_NUM_THREADS=1 torchrun --standalone --nnodes=1 --nproc_per_node=8  finetune.py  data/AdvertiseGen/  THUDM/glm-edge-4b-chat  configs/lora.yaml # For Chat Fine-tune
+OMP_NUM_THREADS=1 torchrun --standalone --nnodes=1 --nproc_per_node=8  finetune_vision.py  data/CogVLM-311K/  THUDM/glm-edge-v-5b  configs/lora.yaml  # For VQA Fine-tune
 ```
 
 Execute **single machine single card** run through the following code.
 
 ```shell
 python finetune.py  data/AdvertiseGen/  THUDM/glm-edge-4b-chat  configs/lora.yaml # For Chat Fine-tune
+python finetune_vision.py  data/CogVLM-311K/  THUDM/glm-edge-v-5b configs/lora.yaml # For VQA Fine-tune
 ```
 
 ## Fine-tune from a saved point
@@ -126,4 +179,5 @@ For example, this is an example code to continue fine-tuning from the last saved
 
 ```shell
 python finetune.py data/AdvertiseGen/ THUDM/glm-edge-4b-chat configs/lora.yaml yes
+python finetune_vision.py  data/CogVLM-311K/  THUDM/glm-edge-4b-chat  configs/lora.yaml yes
 ```

@@ -8,9 +8,9 @@ Read this in [English](README_en.md)
 
 多轮对话微调示例采用 GLM-Edge 对话格式约定，对不同角色添加不同 `loss_mask` 从而在一遍计算中为多轮回复计算 `loss`。
 
-对于数据文件，样例采用如下格式
+对于数据文件，样例采用如下格式：
 
-如果您仅希望微调模型的对话能力，而非工具能力，您应该按照以下格式整理数据。
+对于glm-edge-chat系列模型，您应该按照以下格式整理数据。
 
 ```json
 [
@@ -59,6 +59,57 @@ Read this in [English](README_en.md)
 }
 ```
 
+对于glm-edge-v系列模型，您应该按照以下格式整理数据。
+
+```json
+[
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "image",
+              "image": "path/to/image"
+            },
+            {
+              "type": "text",
+              "text": "图片中的狗在做什么？"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "type": "text",
+              "text": "zRzRzRzRzRzRzR!这只狗躺在公寓客厅的绿色沙发上。"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "这只狗是什么颜色的？"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "type": "text",
+              "text": "zRzRzRzRzRzRzR!这只狗是棕色和白色的。"
+            }
+          ]
+        }
+      ]
+    }
+]
+```
+
 ## 配置文件
 
 微调配置文件位于 `config` 目录下，包括以下文件：
@@ -71,7 +122,7 @@ Read this in [English](README_en.md)
         + val_file: 验证数据集的文件路径。
         + test_file: 测试数据集的文件路径。
         + num_proc: 在加载数据时使用的进程数量。
-    + max_input_length: 输入序列的最大长度。
+    + max_input_length: 输入序列的最大长度，对于glm-edge-v系列模型，由于图片占位token个数是584，因此值需要设置大些。
     + max_output_length: 输出序列的最大长度。
     + training_args 部分
         + output_dir: 用于保存模型和其他输出的目录。
@@ -104,12 +155,14 @@ Read this in [English](README_en.md)
 
 ```shell
 OMP_NUM_THREADS=1 torchrun --standalone --nnodes=1 --nproc_per_node=8  finetune.py  data/AdvertiseGen/  THUDM/glm-edge-4b-chat  configs/lora.yaml # For Chat Fine-tune
+OMP_NUM_THREADS=1 torchrun --standalone --nnodes=1 --nproc_per_node=8  finetune_vision.py  data/CogVLM-311K/  THUDM/glm-edge-v-5b  configs/lora.yaml  # For VQA Fine-tune
 ```
 
 通过以下代码执行 **单机单卡** 运行。
 
 ```shell
 python finetune.py  data/AdvertiseGen/  THUDM/glm-edge-4b-chat  configs/lora.yaml # For Chat Fine-tune
+python finetune_vision.py  data/CogVLM-311K/  THUDM/glm-edge-v-5b configs/lora.yaml # For VQA Fine-tune
 ```
 
 ## 从保存点进行微调
@@ -123,4 +176,5 @@ python finetune.py  data/AdvertiseGen/  THUDM/glm-edge-4b-chat  configs/lora.yam
 
 ```shell
 python finetune.py  data/AdvertiseGen/  THUDM/glm-edge-4b-chat  configs/lora.yaml yes
+python finetune_vision.py  data/CogVLM-311K/  THUDM/glm-edge-4b-chat  configs/lora.yaml yes
 ```
