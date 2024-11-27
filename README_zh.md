@@ -36,6 +36,12 @@ python cli_demo.py --backend ov --model_path THUDM/glm-edge-1.5b-chat-ov  --prec
 >
 > vLLM 版本模型需要从这里 源代码 安装 vLLM 以正常运行。
 
+如果你想使用 glm-edge-v 系列模型，你可以运行以下命令行交互代码
+
+```shell
+python cli_demo_vision.py --model_path THUDM/glm-edge-v-2b --precision bfloat16
+```
+
 你也可以使用 Gradio 启动 WebUI。
 
 ```shell
