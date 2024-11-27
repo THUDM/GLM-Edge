@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
+
+os.environ["WANDB_DISABLED"] = "true"
 import jieba
 import dataclasses as dc
 import functools
@@ -17,6 +19,7 @@ from rouge_chinese import Rouge
 from torch import nn
 from transformers import (
     AutoModelForCausalLM,
+    AutoImageProcessor,
     AutoTokenizer,
     EvalPrediction,
     GenerationConfig,
@@ -27,6 +30,7 @@ from transformers import DataCollatorForSeq2Seq as _DataCollatorForSeq2Seq
 from transformers import Seq2SeqTrainer as _Seq2SeqTrainer
 from datasets import load_dataset, DatasetDict, NamedSplit
 from typing import Optional
+from PIL import Image
 
 app = typer.Typer(pretty_exceptions_show_locals=False)
 
@@ -52,6 +56,7 @@ class DataCollatorForSeq2Seq(_DataCollatorForSeq2Seq):
 
 
 class Seq2SeqTrainer(_Seq2SeqTrainer):
+    # Not Support for apex
     def training_step(self, model: nn.Module, inputs: dict[str, Any], num_items_in_batch=None) -> torch.Tensor:
         model.train()
         inputs = self._prepare_inputs(inputs)
@@ -70,27 +75,29 @@ class Seq2SeqTrainer(_Seq2SeqTrainer):
     def prediction_step(
         self,
         model: nn.Module,
-        inputs: dict[str, Any],
+        inputs: dict,
         prediction_loss_only: bool,
         ignore_keys=None,
         **gen_kwargs,
     ) -> tuple[Optional[float], Optional[torch.Tensor], Optional[torch.Tensor]]:
-        with torch.no_grad():  # Ensure no gradient computation
+        with torch.no_grad():
             if self.args.predict_with_generate:
-                output_ids = inputs.pop("output_ids")
-            input_ids = inputs["input_ids"]
-
-            if "labels" in inputs:
-                del inputs["labels"]
-
+                output_ids = inputs.pop("output_ids", None)
             loss, generated_tokens, labels = super().prediction_step(
-                model, inputs, prediction_loss_only, ignore_keys, **gen_kwargs
+                model=model,
+                inputs=inputs,
+                prediction_loss_only=prediction_loss_only,
+                ignore_keys=ignore_keys,
+                **gen_kwargs,
             )
 
-            generated_tokens = generated_tokens[:, input_ids.size()[1] :]
-            labels = output_ids
+            if generated_tokens is not None:
+                generated_tokens = generated_tokens[:, inputs["input_ids"].size()[1] :]
 
-            del inputs, input_ids, output_ids
+            if self.args.predict_with_generate:
+                labels = output_ids
+
+            del inputs, output_ids
             torch.cuda.empty_cache()
 
         return loss, generated_tokens, labels
@@ -212,7 +219,6 @@ class DataManager(object):
         orig_dataset = self._get_dataset(split)
         if orig_dataset is None:
             return
-
         if remove_orig_columns:
             remove_columns = orig_dataset.column_names
         else:
@@ -222,80 +228,180 @@ class DataManager(object):
             batched=batched,
             remove_columns=remove_columns,
             num_proc=self._num_proc,
+            # This is default params of  orig_dataset.map, and you can change it smaller
+            # https://github.com/THUDM/GLM-4/issues/277
+            writer_batch_size=1000,
+            batch_size=1000,
         )
-
-
-def process_message(message):
-    if "tools" in message and message["role"] == "system":
-        for tool in message["tools"]:
-            parameters = tool["function"]["parameters"]["properties"]
-            tool["function"]["parameters"]["properties"] = {k: v for k, v in parameters.items() if v is not None}
-    elif "tools" in message:
-        del message["tools"]
-    return message
 
 
 def process_batch(
     batch: Mapping[str, Sequence],
     tokenizer: PreTrainedTokenizer,
+    processor,
     max_input_length: int,
     max_output_length: int,
 ) -> dict[str, list]:
     batched_conv = batch["messages"]
     batched_input_ids = []
+    batched_attention_mask = []
+    batched_position_ids = []
     batched_labels = []
-    for conv in batched_conv:
-        new_input_ids = tokenizer.apply_chat_template(conv, tokenize=True, return_dict=False)
-        input_ids = new_input_ids
-        loss_masks = [False] * len(input_ids)
-        last_assistant_index = len(input_ids) - input_ids[::-1].index(59254) - 1  # <|assistant|>
-        for j in range(last_assistant_index + 1, len(input_ids)):
-            loss_masks[j] = True
+    batched_images = []
 
-        input_ids.append(59253)  # EOS for chat <|user|>
-        loss_masks = [False, *loss_masks]
+    max_length = max_input_length + max_output_length
+
+    for conv in batched_conv:
+        input_ids = []
+        attention_mask = []
+        position_ids = []
+        loss_masks = []
+        pixel_values = []
+
+        if conv[0]["content"][0].get("image"):
+            image = Image.open(conv[0]["content"][0]["image"])
+            pixel_values.append(torch.tensor(processor(image).pixel_values))
+
+        for message in conv:
+            loss_mask_val = False if message["role"] in ("system", "user") else True
+            new_input_ids_all = tokenizer.apply_chat_template(
+                [message],
+                add_generation_prompt=True,
+                tokenize=True,
+                return_dict=True,
+                return_tensors="pt",
+            )
+            new_input_ids = new_input_ids_all["input_ids"][0].tolist()
+            new_attention_mask = new_input_ids_all["attention_mask"][0].tolist()
+            new_position_ids = list(range(len(position_ids), len(position_ids) + len(new_input_ids)))
+
+            new_loss_masks = [loss_mask_val] * len(new_input_ids)
+            input_ids += new_input_ids
+            attention_mask += new_attention_mask
+            position_ids += new_position_ids
+            loss_masks += new_loss_masks
+
+        input_ids.append(59253)  # EOS
+        attention_mask.append(1)
+        position_ids.append(len(position_ids))
+        loss_masks.append(False)
+
+        padding_length = max(0, max_length - len(input_ids))
+
+        # Left padding with batch
+        input_ids = [tokenizer.pad_token_id] * padding_length + input_ids[-max_length:]
+        attention_mask = [0] * padding_length + attention_mask[-max_length:]
+        position_ids = [0] * padding_length + position_ids[-max_length:]
+        loss_masks = [False] * padding_length + loss_masks[-max_length:]
+
         labels = []
         for input_id, mask in zip(input_ids, loss_masks):
             if mask:
                 labels.append(input_id)
             else:
                 labels.append(-100)
-        max_length = max_input_length + max_output_length + 1
-        batched_input_ids.append(input_ids[:max_length])
-        batched_labels.append(labels[:max_length])
 
-    del batched_conv, conv, input_ids, loss_masks, new_input_ids, labels
+        batched_input_ids.append(input_ids[:max_length])
+        batched_attention_mask.append(attention_mask[:max_length])
+        batched_position_ids.append(position_ids[:max_length])
+        batched_labels.append(labels[:max_length])
+        batched_images.append(pixel_values[0][0])
+
+    del (
+        batched_conv,
+        conv,
+        input_ids,
+        attention_mask,
+        position_ids,
+        loss_masks,
+        message,
+        new_input_ids,
+        new_loss_masks,
+        labels,
+        input_id,
+        mask,
+    )
     torch.cuda.empty_cache()
 
-    return {"input_ids": batched_input_ids, "labels": batched_labels}
+    return {
+        "input_ids": batched_input_ids,
+        "attention_mask": batched_attention_mask,
+        "position_ids": batched_position_ids,
+        "labels": batched_labels,
+        "pixel_values": batched_images,
+    }
 
 
 def process_batch_eval(
     batch: Mapping[str, Sequence],
     tokenizer: PreTrainedTokenizer,
+    processor,
     max_input_length: int,
     max_output_length: int,
 ) -> dict[str, list]:
     batched_conv = batch["messages"]
     batched_input_ids = []
+    batched_attention_mask = []
+    batched_position_ids = []
     batched_output_ids = []
+    batched_images = []
 
     for conv in batched_conv:
-        new_input_ids = tokenizer.apply_chat_template(conv, tokenize=True, return_dict=False)
-        input_ids = new_input_ids
-        last_assistant_index = len(input_ids) - input_ids[::-1].index(59254) - 1
-        output_prompt, output_ids = (
-            input_ids[:1],
-            input_ids[last_assistant_index:],
-        )
-        output_ids.append(59253)
-        batched_input_ids.append(input_ids[:max_input_length] + output_prompt[:1])
-        batched_output_ids.append(output_ids[:max_output_length])
+        if conv[0]["content"][0].get("image"):
+            image = Image.open(conv[0]["content"][0]["image"])
 
-    del batched_conv, conv, input_ids, new_input_ids, output_prompt, output_ids
+        new_input_ids_all = tokenizer.apply_chat_template(
+            conv,
+            add_generation_prompt=True,
+            tokenize=True,
+            padding=True,
+            return_dict=True,
+            return_tensors="pt",
+        )
+
+        input_ids = new_input_ids_all["input_ids"][0].tolist()
+        attention_mask = new_input_ids_all["attention_mask"][0].tolist()
+        position_ids = list(range(len(input_ids)))
+
+        dialogue_parts = [0]
+        for idx, token_id in enumerate(input_ids):
+            if token_id == 59254:
+                dialogue_parts.append(idx + 1)
+
+        if not dialogue_parts or dialogue_parts[-1] != len(input_ids):
+            dialogue_parts.append(len(input_ids))
+
+        # Split the conversation into multiple dialogue segments
+        for end_idx in range(1, len(dialogue_parts)):
+            input_segment = input_ids[: dialogue_parts[end_idx]]
+            attention_segment = attention_mask[: dialogue_parts[end_idx]]
+            position_segment = position_ids[: dialogue_parts[end_idx]]
+            output_segment = input_ids[dialogue_parts[end_idx - 1] : dialogue_parts[end_idx]]
+            output_segment.append(59253)  # Add EOS token
+
+            # Left Padding
+            padding_length = max(0, max_input_length - len(input_segment))
+            input_segment = [tokenizer.pad_token_id] * padding_length + input_segment[:max_input_length]
+            attention_segment = [0] * padding_length + attention_segment[:max_input_length]
+            position_segment = [0] * padding_length + position_segment[:max_input_length]
+            output_segment = [tokenizer.pad_token_id] * padding_length + output_segment[:max_output_length]
+
+            batched_input_ids.append(input_segment[:max_input_length])
+            batched_attention_mask.append(attention_segment[:max_input_length])
+            batched_position_ids.append(position_segment[:max_input_length])
+            batched_output_ids.append(output_segment[:max_output_length])
+            batched_images.append(torch.tensor(processor(image).pixel_values)[0])
+
+    del batched_conv, input_ids, attention_mask, position_ids, new_input_ids_all, output_segment
     torch.cuda.empty_cache()
 
-    return {"input_ids": batched_input_ids, "output_ids": batched_output_ids}
+    return {
+        "input_ids": batched_input_ids,
+        "attention_mask": batched_attention_mask,
+        "position_ids": batched_position_ids,
+        "output_ids": batched_output_ids,
+        "pixel_values": batched_images,
+    }
 
 
 def load_tokenizer_and_model(
@@ -303,19 +409,14 @@ def load_tokenizer_and_model(
     peft_config: Optional[PeftConfig] = None,
 ):
     tokenizer = AutoTokenizer.from_pretrained(model_dir, trust_remote_code=True, padding_side="left")
-
-    model = AutoModelForCausalLM.from_pretrained(
-        model_dir,
-        trust_remote_code=True,
-        use_cache=False,
-        torch_dtype=torch.bfloat16,  # Must use BFloat 16
-    )
-
+    processor = AutoImageProcessor.from_pretrained(model_dir, trust_remote_code=True, dtype=torch.bfloat16)
     if peft_config is not None:
+        model = AutoModelForCausalLM.from_pretrained(model_dir, trust_remote_code=True, torch_dtype=torch.bfloat16)
         model = get_peft_model(model, peft_config)
         model.print_trainable_parameters()
-
-    return tokenizer, model
+    else:
+        model = AutoModelForCausalLM.from_pretrained(model_dir, trust_remote_code=True, torch_dtype=torch.bfloat16)
+    return tokenizer, model, processor
 
 
 def compute_metrics(eval_preds: EvalPrediction, tokenizer):
@@ -354,7 +455,11 @@ def main(
     ),
 ):
     ft_config = FinetuningConfig.from_file(config_file)
-    tokenizer, model = load_tokenizer_and_model(model_dir, peft_config=ft_config.peft_config)
+    tokenizer, model, processor = load_tokenizer_and_model(model_dir, peft_config=ft_config.peft_config)
+
+    if ft_config.freezeV:
+        for param in model.base_model.model.model.vision.parameters():
+            param.requires_grad = False
     data_manager = DataManager(data_dir, ft_config.data_config)
 
     train_dataset = data_manager.get_dataset(
@@ -362,6 +467,7 @@ def main(
         functools.partial(
             process_batch,
             tokenizer=tokenizer,
+            processor=processor,
             max_input_length=ft_config.max_input_length,
             max_output_length=ft_config.max_output_length,
         ),
@@ -373,6 +479,7 @@ def main(
         functools.partial(
             process_batch_eval,
             tokenizer=tokenizer,
+            processor=processor,
             max_input_length=ft_config.max_input_length,
             max_output_length=ft_config.max_output_length,
         ),
@@ -384,13 +491,16 @@ def main(
         functools.partial(
             process_batch_eval,
             tokenizer=tokenizer,
+            processor=processor,
             max_input_length=ft_config.max_input_length,
             max_output_length=ft_config.max_output_length,
         ),
         batched=True,
     )
 
+    model.gradient_checkpointing_enable()
     model.enable_input_require_grads()
+
     trainer = Seq2SeqTrainer(
         model=model,
         args=ft_config.training_args,

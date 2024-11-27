@@ -4,9 +4,9 @@ data_config:
   test_file: dev.jsonl
   num_proc: 1
 
-combine: True
-max_input_length: 256
-max_output_length: 256
+freezeV: False
+max_input_length: 2048
+max_output_length: 1024
 
 training_args:
   # see `transformers.Seq2SeqTrainingArguments`
@@ -26,7 +26,7 @@ training_args:
   logging_strategy: steps
   logging_steps: 10
   # settings for evaluation
-  per_device_eval_batch_size: 32
+  per_device_eval_batch_size: 16
   eval_strategy: steps
   eval_steps: 1000
   # adam_epsilon: 1e-6
