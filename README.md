@@ -1,5 +1,7 @@
 # GLM-Edge
 
+Read this in [English](README_en.md)
+
 ## 项目更新
 
 - 🔥🔥 **News**: ```2024/11/30```: 我们发布 `GLM-Edge` 模型。共计`glm-edge-1.5b-chat`, `glm-edge-4b-chat`, `glm-edge-v-2b`,
