@@ -9,7 +9,6 @@ from PIL import Image
 import re
 import gradio as gr
 import torch
-from vllm import SamplingParams, AsyncEngineArgs, AsyncLLMEngine
 from peft import AutoPeftModelForCausalLM
 from transformers import (
     AutoTokenizer,
@@ -22,13 +21,6 @@ from transformers import (
 # Parse arguments
 def parse_args():
     parser = argparse.ArgumentParser(description="GLM-Edge-Chat Gradio Demo with adjustable parameters")
-    parser.add_argument(
-        "--backend",
-        type=str,
-        choices=["vllm", "transformers"],
-        required=True,
-        help="Choose inference backend: vllm or transformers",
-    )
     parser.add_argument("--model_path", type=str, required=True, help="Path to the model")
     parser.add_argument("--server_name", type=str, default="127.0.0.1", help="Server name")
     parser.add_argument("--server_port", type=int, default=7860, help="Server port")
@@ -46,22 +38,6 @@ args = parse_args()
 
 def _resolve_path(path: Union[str, Path]) -> Path:
     return Path(path).expanduser().resolve()
-
-# Load Model and Tokenizer for VLLM
-def load_vllm_model_and_tokenizer(model_dir: str, precision: str):
-    tokenizer = AutoTokenizer.from_pretrained(model_dir)
-    engine_args = AsyncEngineArgs(
-        model=model_dir,
-        tokenizer=model_dir,
-        tensor_parallel_size=1,
-        dtype="bfloat16" if precision == "bfloat16" else "float16",
-        gpu_memory_utilization=0.9,
-        enforce_eager=True,
-        worker_use_ray=True,
-        disable_log_requests=True,
-    )
-    engine = AsyncLLMEngine.from_engine_args(engine_args)
-    return engine, tokenizer
 
 # Load Model and Tokenizer for transformers
 def load_model_and_tokenizer(model_dir: Union[str, Path], precision: str, trust_remote_code: bool = True):
@@ -87,10 +63,7 @@ def load_model_and_tokenizer(model_dir: Union[str, Path], precision: str, trust_
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_dir, trust_remote_code=trust_remote_code, use_fast=False)
     return model, tokenizer
 
-if args.backend == "vllm":
-    engine, tokenizer = load_vllm_model_and_tokenizer(args.model_path, args.precision)
-else:
-    model, tokenizer = load_model_and_tokenizer(args.model_path, args.precision, trust_remote_code=True)
+model, tokenizer = load_model_and_tokenizer(args.model_path, args.precision, trust_remote_code=True)
 
 def is_url(s):
     if re.match(r'^(?:http|ftp)s?://', s):
@@ -172,36 +145,6 @@ def predict(history, prompt, max_length, top_p, temperature, image=None):
             history[-1][1] += new_token
         yield history
 
-async def vllm_gen(history, prompt, max_length, top_p, temperature):
-    messages = []
-    if prompt:
-        messages.append({"role": "system", "content": prompt})
-    for idx, (user_msg, model_msg) in enumerate(history):
-        if prompt and idx == 0:
-            continue
-        if idx == len(history) - 1 and not model_msg:
-            messages.append({"role": "user", "content": user_msg})
-            break
-        if user_msg:
-            messages.append({"role": "user", "content": user_msg})
-        if model_msg:
-            messages.append({"role": "assistant", "content": model_msg})
-
-    inputs = tokenizer.apply_chat_template(messages, add_generation_prompt=True, tokenize=False)
-    sampling_params = SamplingParams(
-        n=1,
-        best_of=1,
-        presence_penalty=1.0,
-        frequency_penalty=0.0,
-        temperature=temperature,
-        top_p=top_p,
-        max_tokens=max_length,
-    )
-    async for output in engine.generate(
-        prompt=inputs, sampling_params=sampling_params, request_id=f"{time.time()}"
-    ):
-        yield output.outputs[0].text
-
 def main():
     with gr.Blocks() as demo:
         gr.HTML("""<h1 align="center">GLM-Edge-Chat Gradio Chat Demo</h1>""")
@@ -235,14 +178,9 @@ def main():
 
         # Button actions and callbacks
         pBtn.click(set_prompt, inputs=[prompt_input], outputs=chatbot)
-        if args.backend == "vllm":
-            submitBtn.click(user, [user_input, chatbot], [user_input, chatbot], queue=False).then(
-                vllm_gen, [chatbot, prompt_input, max_length, top_p, temperature], chatbot
-            )
-        else:
-            submitBtn.click(user, [user_input, chatbot], [user_input, chatbot], queue=False).then(
-                predict, [chatbot, prompt_input, max_length, top_p, temperature, image_input], chatbot
-            )
+        submitBtn.click(user, [user_input, chatbot], [user_input, chatbot], queue=False).then(
+            predict, [chatbot, prompt_input, max_length, top_p, temperature, image_input], chatbot
+        )
         emptyBtn.click(lambda: (None, None), None, [chatbot, prompt_input], queue=False)
 
     demo.queue()
