@@ -109,7 +109,7 @@ def preprocess_messages(history, prompt, image):
                     trust_remote_code=True
                     )
                 pixel_values = torch.tensor(
-                    processor(image_input).pixel_values).to("cuda")
+                    processor(image_input).pixel_values).to(model.device)
             except:
                 print("Invalid image path. Continuing with text conversation.")
 
@@ -123,8 +123,8 @@ def predict(history, prompt, max_length, top_p, temperature, image=None):
     
     streamer = TextIteratorStreamer(tokenizer, timeout=60, skip_prompt=True, skip_special_tokens=True)
     generate_kwargs = {
-        "input_ids": model_inputs["input_ids"].to('cuda'),
-        "attention_mask": model_inputs["attention_mask"],
+        "input_ids": model_inputs["input_ids"].to(model.device),
+        "attention_mask": model_inputs["attention_mask"].to(model.device),
         "streamer": streamer,
         "max_new_tokens": max_length,
         "do_sample": True,
