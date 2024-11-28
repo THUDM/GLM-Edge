@@ -83,6 +83,10 @@ class Seq2SeqTrainer(_Seq2SeqTrainer):
         with torch.no_grad():
             if self.args.predict_with_generate:
                 output_ids = inputs.pop("output_ids", None)
+            
+            if 'labels' in inputs:
+                del inputs['labels']
+
             loss, generated_tokens, labels = super().prediction_step(
                 model=model,
                 inputs=inputs,
