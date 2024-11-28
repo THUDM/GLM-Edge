@@ -2,9 +2,14 @@
 
 Read this in [English](README_en.md)
 
+在 <a href="https://huggingface.co/spaces/THUDM-HF-SPACE/GLM-Edge-1.5B-Chat-Space" target="_blank"> 🤗 这里</a> 体验 GLM-Edge-1.5B-Chat 端侧模型
+
+在 <a href="https://huggingface.co/spaces/THUDM-HF-SPACE/GLM-Edge-V-5B-Space" target="_blank"> 🤗 这里</a> 体验 GLM-Edge-V-5B 端侧模型
+
+
 ## 模型介绍
 
-GLM-Edge系列是我们在面向端侧真实落地使用的场景下的一次尝试，由两种尺寸的大语言对话模型和多模态理解模型组成（
+**GLM-Edge** 系列是我们在面向端侧真实落地使用的场景下的一次尝试，由两种尺寸的大语言对话模型和多模态理解模型组成（
 `GLM-Edge-1.5B-Chat`，`GLM-Edge-4B-Chat`，`GLM-Edge-V-2B`，`GLM-Edge-V-5B`）。其中，`1.5B / 2B`模型主要面向手机、车机等平台，
 `4B / 5B` 模型主要面向PC等平台。
 
