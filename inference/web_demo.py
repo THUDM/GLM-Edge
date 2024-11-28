@@ -6,7 +6,7 @@ from typing import Union
 import requests
 from io import BytesIO
 from PIL import Image
-
+import re
 import gradio as gr
 import torch
 from vllm import SamplingParams, AsyncEngineArgs, AsyncLLMEngine
@@ -92,52 +92,65 @@ if args.backend == "vllm":
 else:
     model, tokenizer = load_model_and_tokenizer(args.model_path, args.precision, trust_remote_code=True)
 
+def is_url(s):
+    if re.match(r'^(?:http|ftp)s?://', s):
+        return True
+    return False
 
-def get_image(image_path=None, image_url=None):
-    if image_path:
-        return Image.open(image_path).convert("RGB")
-    elif image_url:
-        response = requests.get(image_url)
+def get_image(image):
+    if is_url(image):
+        response = requests.get(image)
         return Image.open(BytesIO(response.content)).convert("RGB")
+    elif image:
+        return Image.open(image).convert("RGB")
     return None
 
-
-def predict(history, prompt, max_length, top_p, temperature, image=None):
+def preprocess_messages(history, prompt, image):
     messages = []
     pixel_values = None
+
     if prompt:
-        messages.append({"role": "system", "content": [{"type": "text", "text": prompt}]})
+        messages.append({"role": "system", "content": prompt})
     for idx, (user_msg, model_msg) in enumerate(history):
         if prompt and idx == 0:
             continue
-        if idx == len(history) - 1 and not model_msg:
-            messages.append({"role": "user", "content": [{"type": "text", "text": user_msg}]})
+        if idx == len(history) - 1 and not messages:
+            messages.append({"role": "user", "content": user_msg})
             break
         if user_msg:
-            messages.append({"role": "user", "content": [{"type": "text", "text": user_msg}]})
+            messages.append({"role": "user", "content": user_msg})
         if model_msg:
-            messages.append({"role": "assistant", "content": [{"type": "text", "text": model_msg}]})
+            messages.append({"role": "assistant", "content": messages})
+    
+    if hasattr(model.config, "vision_config"):
+        for item in messages:
+            msg = item['content']
+            item['content'] = [{"type": "text", "text": msg}]  
+        if image:
+            messages[-1]['content'].append({"type": "image"})
+            try:
+                image_input = get_image(image)
 
-    if image:
-        try:
-            image_input = Image.open(image).convert("RGB")
-            messages.append({"role": "user", "content": [{"type": "text", "text": ""},{"type": "image"}]})
-        except:
-            print("Invalid image path. Continuing with text conversation.")
-        processor = AutoImageProcessor.from_pretrained(
-                args.model_path, 
-                trust_remote_code=True
-                )
-        pixel_values = torch.tensor(
-            processor(image_input).pixel_values).to("cuda")
-        
+                processor = AutoImageProcessor.from_pretrained(
+                    args.model_path, 
+                    trust_remote_code=True
+                    )
+                pixel_values = torch.tensor(
+                    processor(image_input).pixel_values).to("cuda")
+            except:
+                print("Invalid image path. Continuing with text conversation.")
+
+    return messages, pixel_values
+
+def predict(history, prompt, max_length, top_p, temperature, image=None):
+    messages, pixel_values = preprocess_messages(history, prompt, image)
     model_inputs = tokenizer.apply_chat_template(
         messages, add_generation_prompt=True, tokenize=True, return_tensors="pt", return_dict=True
     )
     
     streamer = TextIteratorStreamer(tokenizer, timeout=60, skip_prompt=True, skip_special_tokens=True)
     generate_kwargs = {
-        "input_ids": model_inputs["input_ids"],
+        "input_ids": model_inputs["input_ids"].to('cuda'),
         "attention_mask": model_inputs["attention_mask"],
         "streamer": streamer,
         "max_new_tokens": max_length,
@@ -146,11 +159,12 @@ def predict(history, prompt, max_length, top_p, temperature, image=None):
         "temperature": temperature,
         "repetition_penalty": 1.2,
     }
-    if image:
-        generate_kwargs['pixel_values'] = pixel_values
+    if hasattr(model.config, "vision_config"):
+        generate_kwargs['eos_token_id'] = [59246, 59253, 59255]
+        if image and isinstance(pixel_values, torch.Tensor):
+            generate_kwargs['pixel_values'] = pixel_values
     else:
         generate_kwargs['eos_token_id'] = tokenizer.encode("<|user|>")
-        
     t = Thread(target=model.generate, kwargs=generate_kwargs)
     t.start()
     for new_token in streamer:
