@@ -110,14 +110,8 @@ python cli_demo.py --backend vllm --model_path THUDM/glm-edge-1.5b-chat --precis
 If you use XInference for inference, you can run the model using the following commands. This is a command-line
 interaction code.
 
-```python
-xinference
-launch - -model - engine
-Transformers - -model - name
-glm - edge - v - -size - in -billions
-2 - -model - format
-pytorch - -quantization
-none
+```shell
+xinference launch --model-engine Transformers --model-name glm-edge-v --size-in-billions 2 --model-format pytorch --quantization none
 ```
 
 Using OpenAI API for inference:

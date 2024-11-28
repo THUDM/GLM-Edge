@@ -103,14 +103,8 @@ python cli_demo.py --backend vllm --model_path THUDM/glm-edge-1.5b-chat --precis
 
 如果你使用 XInference 进行推理，你可以通过运行以下命令来运行模型。这是一个命令行交互代码。
 
-```python
-xinference
-launch - -model - engine
-Transformers - -model - name
-glm - edge - v - -size - in -billions
-2 - -model - format
-pytorch - -quantization
-none
+```shell 
+xinference launch --model-engine Transformers --model-name glm-edge-v --size-in-billions 2 --model-format pytorch --quantization none
 ```
 
 使用 OpenAI API进行推理:
