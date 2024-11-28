@@ -13,6 +13,15 @@ GLM-Edge系列是我们在面向端侧真实落地使用的场景下的一次尝
 例如，在高通骁龙8 Elite平台上，借助其强大的NPU算力，GLM-Edge通过混合量化方案，1.5B对话模型、2B多模态模型能实现每秒60
 tokens以上的解码速度。在应用投机采样技术之后，两个模型能以峰值每秒100 tokens以上的解码速度运行。这些推理方案会由我们或合作伙伴后续放出。
 
+模型下载地址：
+
+|       Model        |                                                                                                     HuggingFace Model                                                                                                      |                                                                                                                GGUF Model                                                                                                                 |
+|:------------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
+| GLM-Edge-1.5B-Chat | [🤗 Huggingface](https://huggingface.co/THUDM/glm-edge-1.5b-chat)<br> [🤖 ModelScope](https://modelscope.cn/models/ZhipuAI/glm-edge-1.5b-chat) <br> [🟣 WiseModel](https://wisemodel.cn/models/ZhipuAI/glm-edge-1.5b-chat) | [🤗 Huggingface](https://huggingface.co/THUDM/glm-edge-1.5b-chat-gguf)<br> [🤖 ModelScope](https://modelscope.cn/models/ZhipuAI/glm-edge-1.5b-chat-gguf) <br> [🟣 WiseModel](https://wisemodel.cn/models/ZhipuAI/glm-edge-1.5b-chat-gguf) |
+|  GLM-Edge-4B-Chat  | [🤗 Huggingface](https://huggingface.co/THUDM/glm-edge-4b-chat)<br> [🤖 ModelScope](https://modelscope.cn/models/ZhipuAI/glm-edge-4b-chat)      <br> [🟣 WiseModel](https://wisemodel.cn/models/ZhipuAI/glm-edge-4b-chat)  |    [🤗 Huggingface](https://huggingface.co/THUDM/glm-edge-4b-chat-gguf)<br> [🤖 ModelScope](https://modelscope.cn/models/ZhipuAI/glm-edge-4b-chat-gguf) <br> [🟣 WiseModel](https://wisemodel.cn/models/ZhipuAI/glm-edge-4b-chat-gguf)    |
+|   GLM-Edge-V-2B    |        [🤗 Huggingface](https://huggingface.co/THUDM/glm-edge-v-2b)<br> [🤖 ModelScope](https://modelscope.cn/models/ZhipuAI/glm-edge-v-2b) <br> [🟣 WiseModel](https://wisemodel.cn/models/ZhipuAI/glm-edge-v-2b)         |        [🤗 Huggingface](https://huggingface.co/THUDM/glm-edge-v-2b-gguf)<br> [🤖 ModelScope](https://modelscope.cn/models/ZhipuAI/glm-edge-v-2b-gguf) <br> [🟣 WiseModel](https://wisemodel.cn/models/ZhipuAI/glm-edge-v-2b-gguf)         |
+|   GLM-Edge-V-5B    |   [🤗 Huggingface](https://huggingface.co/THUDM/glm-edge-v-5b)<br> [🤖 ModelScope](https://modelscope.cn/models/ZhipuAI/glm-edge-v-5b)           <br> [🟣 WiseModel](https://wisemodel.cn/models/ZhipuAI/glm-edge-v-5b)    |        [🤗 Huggingface](https://huggingface.co/THUDM/glm-edge-v-5b-gguf)<br> [🤖 ModelScope](https://modelscope.cn/models/ZhipuAI/glm-edge-v-5b-gguf) <br> [🟣 WiseModel](https://wisemodel.cn/models/ZhipuAI/glm-edge-v-5b-gguf)         |
+
 ## 实机运行数据
 
 数据采集日截止到2024年11月28日。我们还在积极地与合作伙伴们一道优化这些性能。
@@ -90,7 +99,13 @@ python cli_demo.py --backend vllm --model_path THUDM/glm-edge-1.5b-chat --precis
 如果你使用 XInference 进行推理，你可以通过运行以下命令来运行模型。这是一个命令行交互代码。
 
 ```python
-xinference launch --model-engine Transformers --model-name glm-edge-v --size-in-billions 2 --model-format pytorch --quantization none
+xinference
+launch - -model - engine
+Transformers - -model - name
+glm - edge - v - -size - in -billions
+2 - -model - format
+pytorch - -quantization
+none
 ```
 
 使用 OpenAI API进行推理:
@@ -109,11 +124,11 @@ output = client.chat.completions.create(
             "role": "user",
             "content": [
                 {
-                    'type': 'text', 
+                    'type': 'text',
                     'text': 'describe this image',
                 },
                 {
-                    'type': 'image_url', 
+                    'type': 'image_url',
                     'image_url': {
                         "url": "img.png",
                     }

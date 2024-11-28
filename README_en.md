@@ -8,7 +8,17 @@ Based on the technological advancements of the GLM-4 series, we have made target
 
 For example, on the Qualcomm Snapdragon 8 Elite platform, leveraging its powerful NPU computing power and using a mixed quantization scheme, the 1.5B dialogue model and the 2B multimodal model can achieve decoding speeds of over 60 tokens per second. With speculative sampling techniques, these models can reach peak decoding speeds of over 100 tokens per second. These inference solutions will be released later by us or our partners.
 
-## Real-World Performance Data
+Download links for the models:
+
+|       Model        |                                                                                                     HuggingFace Model                                                                                                      |                                                                                                                GGUF Model                                                                                                                 |
+|:------------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
+| GLM-Edge-1.5B-Chat | [🤗 HuggingFace](https://huggingface.co/THUDM/glm-edge-1.5b-chat)<br> [🤖 ModelScope](https://modelscope.cn/models/ZhipuAI/glm-edge-1.5b-chat) <br> [🟣 WiseModel](https://wisemodel.cn/models/ZhipuAI/glm-edge-1.5b-chat) | [🤗 HuggingFace](https://huggingface.co/THUDM/glm-edge-1.5b-chat-gguf)<br> [🤖 ModelScope](https://modelscope.cn/models/ZhipuAI/glm-edge-1.5b-chat-gguf) <br> [🟣 WiseModel](https://wisemodel.cn/models/ZhipuAI/glm-edge-1.5b-chat-gguf) |
+|  GLM-Edge-4B-Chat  | [🤗 HuggingFace](https://huggingface.co/THUDM/glm-edge-4b-chat)<br> [🤖 ModelScope](https://modelscope.cn/models/ZhipuAI/glm-edge-4b-chat)      <br> [🟣 WiseModel](https://wisemodel.cn/models/ZhipuAI/glm-edge-4b-chat)  |    [🤗 HuggingFace](https://huggingface.co/THUDM/glm-edge-4b-chat-gguf)<br> [🤖 ModelScope](https://modelscope.cn/models/ZhipuAI/glm-edge-4b-chat-gguf) <br> [🟣 WiseModel](https://wisemodel.cn/models/ZhipuAI/glm-edge-4b-chat-gguf)    |
+|   GLM-Edge-V-2B    |        [🤗 HuggingFace](https://huggingface.co/THUDM/glm-edge-v-2b)<br> [🤖 ModelScope](https://modelscope.cn/models/ZhipuAI/glm-edge-v-2b) <br> [🟣 WiseModel](https://wisemodel.cn/models/ZhipuAI/glm-edge-v-2b)         |        [🤗 HuggingFace](https://huggingface.co/THUDM/glm-edge-v-2b-gguf)<br> [🤖 ModelScope](https://modelscope.cn/models/ZhipuAI/glm-edge-v-2b-gguf) <br> [🟣 WiseModel](https://wisemodel.cn/models/ZhipuAI/glm-edge-v-2b-gguf)         |
+|   GLM-Edge-V-5B    |   [🤗 HuggingFace](https://huggingface.co/THUDM/glm-edge-v-5b)<br> [🤖 ModelScope](https://modelscope.cn/models/ZhipuAI/glm-edge-v-5b)           <br> [🟣 WiseModel](https://wisemodel.cn/models/ZhipuAI/glm-edge-v-5b)    |        [🤗 HuggingFace](https://huggingface.co/THUDM/glm-edge-v-5b-gguf)<br> [🤖 ModelScope](https://modelscope.cn/models/ZhipuAI/glm-edge-v-5b-gguf) <br> [🟣 WiseModel](https://wisemodel.cn/models/ZhipuAI/glm-edge-v-5b-gguf)         |
+
+
+## Performance Data
 
 Data collection is up to November 28, 2024. We are actively working with partners to optimize these performances.
 
