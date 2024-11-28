@@ -5,7 +5,7 @@ data_config:
   num_proc: 1
 
 freezeV: False
-max_input_length: 2048
+max_input_length: 2048 # For Image Must larger than 578
 max_output_length: 1024
 
 training_args:
