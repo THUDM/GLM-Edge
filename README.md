@@ -4,7 +4,7 @@ Read this in [English](README_en.md)
 
 在 <a href="https://huggingface.co/spaces/THUDM-HF-SPACE/GLM-Edge-1.5B-Chat-Space" target="_blank"> 🤗 这里</a> 体验 GLM-Edge-1.5B-Chat 端侧模型
 
-在 <a href="https://huggingface.co/spaces/THUDM-HF-SPACE/GLM-Edge-V-5B-Space" target="_blank"> 🤗 这里</a> 体验 GLM-Edge-V-5B 端侧模型
+在 <a href="https://huggingface.co/spaces/THUDM-HF-SPACE/GLM-Edge-V-5B-Space" target="_blank"> 🤗 这里</a> 或者 <a href="https://modelscope.cn/studios/ZhipuAI/GLM-Edge-V-5B-Demo" target="_blank"> 🤖 这里</a> 体验 GLM-Edge-V-5B 端侧模型
 
 
 ## 模型介绍
@@ -35,8 +35,8 @@ tokens以上的解码速度。在应用投机采样技术之后，两个模型�
 
 | 模型                 | 任务                     | 量化方案 | 框架  | 1st token latency (ms) | Token Rate (tokens/s) | Peak Memory Footprint (GB) |
 |--------------------|------------------------|------|-----|------------------------|-----------------------|----------------------------|
-| GLM-Edge-4B-Chat   | (input/output=512/128) | INT4 | QNN | 260                    | 65                    | 2.9                        |
-| GLM-Edge-1.5B-Chat | (input/output=512/128) | INT4 | QNN | 660                    | 24                    | 1.2                        |
+| GLM-Edge-4B-Chat   | (input/output=512/128) | INT4 | QNN | 660                    | 24                    | 2.9                        |
+| GLM-Edge-1.5B-Chat | (input/output=512/128) | INT4 | QNN | 260                    | 65                    | 1.2                        |
 
 * 在高通8 Elite（Gen4）平台上测试，模型全部运行在NPU上
 * 如运行V模型，另外需要单图890ms的处理时间和约660M的额外内存
