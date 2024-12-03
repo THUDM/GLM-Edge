@@ -417,6 +417,8 @@ class OvGLMv(GenerationMixin):
         batch_size, num_concurrent_media, num_tiles, num_channels, height, width = pixel_values.shape
         pixel_values = pixel_values.reshape(batch_size * num_concurrent_media * num_tiles, num_channels, height, width)
         if not past_key_values:
+            self.request.reset_state()
+            self.next_beam_idx = np.arange(input_ids.shape[0], dtype=int)
             # not allow for inputs_embeds, because we want to process image feature
             assert input_ids is not None and inputs_embeds is None, f"{input_ids} {inputs_embeds}"
             inputs_embeds = torch.from_numpy(self.embedding(input_ids)[0])
