@@ -5,10 +5,11 @@ data_config:
   num_proc: 1
 
 combine: True
-max_input_length: 256
-max_output_length: 128
+max_input_length: 2048  # For Image Must larger than 578
+max_output_length: 1024
 
 training_args:
+  bf16: True
   # see `transformers.Seq2SeqTrainingArguments`
   output_dir: ./output
   max_steps: 3000
@@ -35,4 +36,4 @@ training_args:
   generation_config:
     max_new_tokens: 512
   # set your absolute deepspeed path here
-  deepspeed: /share/home/zyx/Code/GLM-Edge/finetune/configs/ds_zero_3.json
+  deepspeed: configs/ds_zero_3.json

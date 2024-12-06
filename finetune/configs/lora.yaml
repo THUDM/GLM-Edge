@@ -5,10 +5,11 @@ data_config:
   num_proc: 1
 
 freezeV: False
-max_input_length: 2048 # For Image Must larger than 578
+max_input_length: 2048  # For Image Must larger than 578
 max_output_length: 1024
 
 training_args:
+  bf16: True
   # see `transformers.Seq2SeqTrainingArguments`
   output_dir: ./output
   max_steps: 3000

@@ -5,7 +5,7 @@ checkpoints/
 master_ip
 logs/
 *.DS_Store
-.idea
+.idea/*
 output*
 test*
 pyproject.toml
