@@ -376,6 +376,7 @@ def main(
         ),
         batched=True,
     )
+
     trainer = Seq2SeqTrainer(
         model=model,
         args=ft_config.training_args,
