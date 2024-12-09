@@ -270,7 +270,7 @@ def process_batch(
             loss_mask_val = False if message["role"] in ("system", "user") else True
             new_input_ids_all = tokenizer.apply_chat_template(
                 [message],
-                add_generation_prompt=True,
+                add_generation_prompt=False,
                 tokenize=True,
                 return_dict=True,
                 return_tensors="pt",
@@ -288,7 +288,7 @@ def process_batch(
         input_ids.append(59253)  # EOS
         attention_mask.append(1)
         position_ids.append(len(position_ids))
-        loss_masks.append(False)
+        loss_masks.append(True)
 
         padding_length = max(0, max_length - len(input_ids))
 
