@@ -52,21 +52,6 @@ class DataCollatorForSeq2Seq(_DataCollatorForSeq2Seq):
 
 
 class Seq2SeqTrainer(_Seq2SeqTrainer):
-    def training_step(self, model: nn.Module, inputs: dict[str, Any], num_items_in_batch=None) -> torch.Tensor:
-        model.train()
-        inputs = self._prepare_inputs(inputs)
-
-        with self.compute_loss_context_manager():
-            loss = self.compute_loss(model, inputs, num_items_in_batch=num_items_in_batch)
-
-        if self.args.n_gpu > 1:
-            loss = loss.mean()
-        self.accelerator.backward(loss)
-        detached_loss = loss.detach() / self.args.gradient_accumulation_steps
-        del inputs
-        torch.cuda.empty_cache()
-        return detached_loss
-
     def prediction_step(
         self,
         model: nn.Module,
@@ -245,7 +230,9 @@ def process_batch(
     batched_input_ids = []
     batched_labels = []
     for conv in batched_conv:
-        new_input_ids = tokenizer.apply_chat_template(conv, tokenize=True, return_dict=False, add_generation_prompt=False)
+        new_input_ids = tokenizer.apply_chat_template(
+            conv, tokenize=True, return_dict=False, add_generation_prompt=False
+        )
         input_ids = new_input_ids
         loss_masks = [False] * len(input_ids)
         last_assistant_index = len(input_ids) - input_ids[::-1].index(59254) - 1  # <|assistant|>
@@ -389,8 +376,6 @@ def main(
         ),
         batched=True,
     )
-
-    model.enable_input_require_grads()
     trainer = Seq2SeqTrainer(
         model=model,
         args=ft_config.training_args,
