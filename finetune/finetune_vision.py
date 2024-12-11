@@ -84,7 +84,7 @@ class Seq2SeqTrainer(_Seq2SeqTrainer):
 
             if self.args.predict_with_generate:
                 labels = output_ids
-
+            
             del inputs, output_ids
             torch.cuda.empty_cache()
 
@@ -293,7 +293,10 @@ def process_batch(
         batched_attention_mask.append(attention_mask[:max_length])
         batched_position_ids.append(position_ids[:max_length])
         batched_labels.append(labels[:max_length])
-        batched_images.append(pixel_values[0][0])
+        if len(pixel_values) > 0:
+            batched_images.append(pixel_values[0][0])
+        else:
+            batched_images.append(torch.zeros([1, 1, 3, 672, 672]))
 
     del (
         batched_conv,
@@ -340,7 +343,7 @@ def process_batch_eval(
 
         new_input_ids_all = tokenizer.apply_chat_template(
             conv,
-            add_generation_prompt=True,
+            add_generation_prompt=False,
             tokenize=True,
             padding=True,
             return_dict=True,
@@ -378,7 +381,10 @@ def process_batch_eval(
             batched_attention_mask.append(attention_segment[:max_input_length])
             batched_position_ids.append(position_segment[:max_input_length])
             batched_output_ids.append(output_segment[:max_output_length])
-            batched_images.append(torch.tensor(processor(image).pixel_values)[0])
+            if conv[0]["content"][0].get("image"): 
+                batched_images.append(torch.tensor(processor(image).pixel_values)[0])
+            else:
+                batched_images.append(torch.zeros([1, 1, 3, 672, 672]))
 
     del batched_conv, input_ids, attention_mask, position_ids, new_input_ids_all, output_segment
     torch.cuda.empty_cache()
