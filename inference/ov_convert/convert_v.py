@@ -308,7 +308,7 @@ def convert_glmv_model(model_id, output_dir, quantization_config):
         pkv = model.model(
             input_ids=input_ids,
             attention_mask=torch.ones((2, 2), dtype=torch.int64),
-            mages = torch.zeros([1, 3, image_size, image_size])
+            mages=torch.zeros([1, 3, image_size, image_size])
         )[1]
         model.forward = types.MethodType(_chatglm_transformer_forward, model)
 
